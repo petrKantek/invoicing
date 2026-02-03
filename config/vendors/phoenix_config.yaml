@@ -1,0 +1,157 @@
+# This configuration defines how to extract invoice data from Phoenix PDF invoices
+
+vendor_name: "Phoenix Lékárenský Velkoobchod"
+vendor_code: "phoenix"
+
+# Invoice header fields
+header:
+  invoice_number:
+    extraction_strategy: "keyword"
+    keyword_search: "DAŇOVÝ DOKLAD"
+    pattern: "č\\.\\s*(\\d+)"
+    required: true
+    validation_pattern: "^\\d{10}$"
+  
+  issue_date:
+    extraction_strategy: "keyword"
+    keyword_search: "Datum vystavení:"
+    pattern: "(\\d{2}\\.\\d{2}\\.\\d{4})"
+    required: true
+  
+  due_date:
+    extraction_strategy: "keyword"
+    keyword_search: "DATUM SPLATNOSTI:"
+    pattern: "(\\d{2}\\.\\d{2}\\.\\d{4})"
+    required: true
+  
+  supply_date:
+    extraction_strategy: "keyword"
+    keyword_search: "Datum usk. zdanit. plnění:"
+    pattern: "(\\d{2}\\.\\d{2}\\.\\d{4})"
+    required: true
+  
+  variable_symbol:
+    extraction_strategy: "keyword"
+    keyword_search: "variabilní symbol"
+    pattern: "(\\d+)"
+    required: false
+
+# Supplier information (dodavatel - right side)
+supplier:
+  name:
+    extraction_strategy: "keyword"
+    keyword_search: "Dodavatel:"
+    pattern: "([A-Za-zÀ-ž\\s,.-]+)"
+    required: true
+  
+  address:
+    extraction_strategy: "keyword"
+    keyword_search: "Dodavatel:"
+    required: false
+  
+  ic:
+    extraction_strategy: "keyword"
+    keyword_search: "IČO:"
+    pattern: "IČO:\\s*(\\d{8})"
+    required: true
+    validation_pattern: "^\\d{8}$"
+  
+  dic:
+    extraction_strategy: "keyword"
+    keyword_search: "DIČ:"
+    pattern: "DIČ:\\s*(CZ\\d{8,10})"
+    required: true
+    validation_pattern: "^CZ\\d{8,10}$"
+
+# VAT breakdown (usually on page 2)
+vat_breakdown:
+  rate_21_base:
+    extraction_strategy: "keyword"
+    keyword_search: "Základ daně 21"
+    pattern: "([\\d\\s]+,\\d{2})"
+    required: true
+  
+  rate_21_vat:
+    extraction_strategy: "keyword"
+    keyword_search: "DPH 21"
+    pattern: "([\\d\\s]+,\\d{2})"
+    required: true
+  
+  rate_12_base:
+    extraction_strategy: "keyword"
+    keyword_search: "Základ daně 12"
+    pattern: "([\\d\\s]+,\\d{2})"
+    required: false
+  
+  rate_12_vat:
+    extraction_strategy: "keyword"
+    keyword_search: "DPH 12"
+    pattern: "([\\d\\s]+,\\d{2})"
+    required: false
+  
+  rate_0_base:
+    extraction_strategy: "keyword"
+    keyword_search: "Základ daně 0"
+    pattern: "([\\d\\s]+,\\d{2})"
+    required: false
+
+# Line items table configuration
+line_items:
+  table_area:
+    page: 1
+    x_min: 55.0
+    x_max: 560.0
+    y_min: 257.0
+    y_max: 698.0
+    pattern: null
+  
+  columns:
+    delivery_note:
+      page: 1
+      x_min: 55.0
+      x_max: 120.0
+      y_min: 257.0
+      y_max: 698.0
+      pattern: "L\\s*\\d+"
+    
+    date:
+      page: 1
+      x_min: 120.0
+      x_max: 180.0
+      y_min: 257.0
+      y_max: 698.0
+      pattern: "\\d{2}\\.\\d{2}\\.\\d{4}"
+    
+    order_number:
+      page: 1
+      x_min: 180.0
+      x_max: 280.0
+      y_min: 257.0
+      y_max: 698.0
+      pattern: "s\\d+"
+    
+    price_without_vat:
+      page: 1
+      x_min: 380.0
+      x_max: 470.0
+      y_min: 257.0
+      y_max: 698.0
+      pattern: "[\\d\\s]+,\\d{2}"
+    
+    price_with_vat:
+      page: 1
+      x_min: 470.0
+      x_max: 560.0
+      y_min: 257.0
+      y_max: 698.0
+      pattern: "[\\d\\s]+,\\d{2}"
+  
+  row_detection_strategy: "y_coordinate"
+
+# Total amount
+total_amount:
+  extraction_strategy: "keyword"
+  keyword_search: "ČÁSTKA K ÚHRADĚ:"
+  pattern: "([\\d\\s]+,\\d{2})\\s*Kč"
+  required: true
+  validation_pattern: "^[\\d\\s]+,\\d{2}$"
