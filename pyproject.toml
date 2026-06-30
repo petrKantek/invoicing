@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["pkantek_kpmg <pkantek@kpmg.cz>"]
 readme = "README.md"
+packages = [{ include = "src" }]
 
 [tool.poetry.dependencies]
 python = "^3.14"
@@ -13,6 +14,9 @@ pydantic = "^2.12.5"
 lxml = "^6.0.2"
 pyyaml = "^6.0.3"
 typer = "^0.20.0"
+
+[tool.poetry.scripts]
+accounting-bot = "src.workflow.cli:main"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.2"
