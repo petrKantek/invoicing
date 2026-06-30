@@ -1,0 +1,62 @@
+# Noviko Invoice Configuration
+# TODO: Implement after Phoenix parser is complete and tested
+
+vendor_name: "Noviko"
+vendor_code: "noviko"
+
+notes: |
+  Configuration template for Noviko invoices.
+  To be implemented after Phoenix parser validation.
+
+header:
+  invoice_number:
+    extraction_strategy: "keyword"
+    keyword_search: "Invoice"
+    required: true
+  
+  issue_date:
+    extraction_strategy: "keyword"
+    keyword_search: "Date"
+    required: true
+  
+  due_date:
+    extraction_strategy: "keyword"
+    keyword_search: "Due"
+    required: true
+  
+  supply_date:
+    extraction_strategy: "keyword"
+    keyword_search: "Supply"
+    required: true
+
+supplier:
+  name:
+    extraction_strategy: "keyword"
+    keyword_search: "Supplier"
+    required: true
+  
+  ic:
+    extraction_strategy: "keyword"
+    keyword_search: "IČO"
+    required: true
+  
+  dic:
+    extraction_strategy: "keyword"
+    keyword_search: "DIČ"
+    required: true
+
+vat_breakdown:
+  rate_21_base:
+    extraction_strategy: "keyword"
+    keyword_search: "Base 21"
+    required: true
+  
+  rate_21_vat:
+    extraction_strategy: "keyword"
+    keyword_search: "VAT 21"
+    required: true
+
+total_amount:
+  extraction_strategy: "keyword"
+  keyword_search: "Total"
+  required: true

@@ -1,0 +1,1 @@
+"""Accounting bot application package."""

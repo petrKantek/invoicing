@@ -1,0 +1,149 @@
+vendor_name: "Alliance Healthcare"
+vendor_code: "alliance"
+
+header:
+  invoice_number:
+    extraction_strategy: "keyword"
+    keyword_search: "DAŇOVÝ DOKLAD - FAKTURA"
+    pattern: "(\\d{9})"
+    required: true
+  
+  issue_date:
+    extraction_strategy: "keyword"
+    keyword_search: "Datum vystavení faktury"
+    pattern: "(\\d{2}\\.\\d{2}\\.\\d{4})"
+    required: true
+  
+  due_date:
+    extraction_strategy: "keyword"
+    keyword_search: "Datum splatnosti"
+    pattern: "(\\d{2}\\.\\d{2}\\.\\d{4})"
+    required: true
+  
+  supply_date:
+    extraction_strategy: "keyword"
+    keyword_search: "Datum uskutečnění zdanitelného plnění"
+    pattern: "(\\d{2}\\.\\d{2}\\.\\d{4})"
+    required: true
+
+  variable_symbol:
+    extraction_strategy: "keyword"
+    keyword_search: "variabilní symbol"
+    pattern: "(\\d+)"
+    required: false
+
+supplier:
+  name:
+    extraction_strategy: "keyword"
+    keyword_search: "Dodavatel"
+    required: true
+
+  address:
+    extraction_strategy: "keyword"
+    keyword_search: "Dodavatel"
+    required: true
+  
+  ic:
+    extraction_strategy: "keyword"
+    keyword_search: "IČ"
+    pattern: "IČ:\\s*(\\d{8})"
+    required: true
+  
+  dic:
+    extraction_strategy: "keyword"
+    keyword_search: "DIČ"
+    pattern: "DIČ:\\s*(CZ\\d{8,10})"
+    required: true
+
+vat_breakdown:
+  rate_10_base:
+    extraction_strategy: "keyword"
+    keyword_search: "Z toho pro 2.daň 10%"
+    pattern: "([\\d,]+\\.\\d{2})"
+    required: true
+  
+  rate_10_vat:
+    extraction_strategy: "keyword"
+    keyword_search: "Z toho pro 2.daň 10%"
+    pattern: "[\\d,]+\\.\\d{2}\\s*([\\d,]+\\.\\d{2})"
+    required: true
+
+total_amount:
+  extraction_strategy: "keyword"
+  keyword_search: "Celkem k úhradě CZK"
+  pattern: "([\\d,]+\\.\\d{2})"
+  required: true
+
+export_supplier:
+  tag: "DodOdb"
+  children:
+    - tag: "ObchNazev"
+      text: "Alliance Healthcare s.r.o."
+    - tag: "ObchAdresa"
+      children:
+        - tag: "Ulice"
+          text: "Podle Trati 624/7"
+        - tag: "Misto"
+          text: "Praha 10 - Malešice"
+        - tag: "PSC"
+          text: "10800"
+        - tag: "Stat"
+          text: "Česká republika"
+        - tag: "KodStatu"
+          text: "CZ"
+    - tag: "FaktNazev"
+      text: "Alliance Healthcare s.r.o."
+    - tag: "ICO"
+      text: "14707420"
+    - tag: "DIC"
+      text: "CZ14707420"
+    - tag: "FaktAdresa"
+      children:
+        - tag: "Ulice"
+          text: "Podle Trati 624/7"
+        - tag: "Misto"
+          text: "Praha 10 - Malešice"
+        - tag: "PSC"
+          text: "10800"
+        - tag: "Stat"
+          text: "Česká republika"
+        - tag: "KodStatu"
+          text: "CZ"
+    - tag: "GUID"
+      text: ""
+    - tag: "Tel"
+      children:
+        - tag: "Pred"
+          text: ""
+        - tag: "Cislo"
+          text: ""
+    - tag: "Fax"
+      children:
+        - tag: "Pred"
+          text: ""
+    - tag: "PlatceDPH"
+      text: "1"
+    - tag: "FyzOsoba"
+      text: "0"
+    - tag: "Banka"
+      text: "ČSOB Plzeň"
+    - tag: "Ucet"
+      text: "8010-0404243703"
+    - tag: "KodBanky"
+      text: "0300"
+    - tag: "KodPartn"
+      text: ""
+    - tag: "SeznamBankSpojeni"
+      children:
+        - tag: "BankSpojeni"
+          attributes:
+            Doklad: "1"
+          children:
+            - tag: "Ucet"
+              text: "8010-0404243703"
+            - tag: "KodBanky"
+              text: "0300"
+
+export_overrides:
+  invoice_defaults:
+    SazbaDPH1: "10"
