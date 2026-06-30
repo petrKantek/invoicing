@@ -46,6 +46,30 @@ class BaseParser(ABC):
             PDFParseError: If parsing fails
         """
 
+    def parse_directory(self, directory_path: Path) -> list[ParsedInvoice]:
+        """Parse all PDF invoices in a directory.
+
+        Args:
+            directory_path: Directory containing PDF invoices
+
+        Returns:
+            Parsed invoices ordered by filename
+
+        Raises:
+            PDFParseError: If the directory is missing or not a directory
+        """
+        if not directory_path.exists():
+            raise PDFParseError(f"Invoice directory not found: {directory_path}")
+        if not directory_path.is_dir():
+            raise PDFParseError(f"Invoice path is not a directory: {directory_path}")
+
+        pdf_paths = sorted(directory_path.glob("*.pdf"))
+        self.logger.info(
+            "Parsing invoice directory",
+            extra={"directory": str(directory_path), "invoice_count": len(pdf_paths)},
+        )
+        return [self.parse(pdf_path) for pdf_path in pdf_paths]
+
     def load_pdf(self, pdf_path: Path) -> fitz.Document:
         """Load PDF document.
 

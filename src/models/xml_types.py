@@ -29,32 +29,32 @@ class PohodaSouhrnDPH(BaseModel):
     """VAT breakdown summary for Pohoda XML (souhrnDPHType)."""
 
     Zaklad1: Decimal | None = Field(
-        default=None, ge=0, description="Base amount for reduced VAT rate (12%)"
+        default=None, description="Base amount for reduced VAT rate (12%)"
     )
     DPH1: Decimal | None = Field(
-        default=None, ge=0, description="VAT amount for reduced rate (12%)"
+        default=None, description="VAT amount for reduced rate (12%)"
     )
     Zaklad2: Decimal | None = Field(
-        default=None, ge=0, description="Base amount for standard VAT rate (21%)"
+        default=None, description="Base amount for standard VAT rate (21%)"
     )
     DPH2: Decimal | None = Field(
-        default=None, ge=0, description="VAT amount for standard rate (21%)"
+        default=None, description="VAT amount for standard rate (21%)"
     )
     Zaklad3: Decimal | None = Field(
-        default=None, ge=0, description="Base amount for 0% VAT rate"
+        default=None, description="Base amount for 0% VAT rate"
     )
-    DPH3: Decimal | None = Field(default=None, ge=0, description="VAT amount (0)")
+    DPH3: Decimal | None = Field(default=None, description="VAT amount (0)")
     ZakladSniz: Decimal | None = Field(
-        default=None, ge=0, description="Total base for reduced rates"
+        default=None, description="Total base for reduced rates"
     )
     DPHSniz: Decimal | None = Field(
-        default=None, ge=0, description="Total VAT for reduced rates"
+        default=None, description="Total VAT for reduced rates"
     )
     ZakladZakl: Decimal | None = Field(
-        default=None, ge=0, description="Total base for standard rate"
+        default=None, description="Total base for standard rate"
     )
     DPHZakl: Decimal | None = Field(
-        default=None, ge=0, description="Total VAT for standard rate"
+        default=None, description="Total VAT for standard rate"
     )
 
     @field_validator("DPH1", "DPH2", "DPH3", "DPHSniz", "DPHZakl")
@@ -85,7 +85,13 @@ class PohodaPolozka(BaseModel):
     @classmethod
     def validate_vat_rate(cls, v: Decimal) -> Decimal:
         """Validate that VAT rate is one of the allowed values."""
-        allowed_rates = {Decimal("0"), Decimal("12"), Decimal("21")}
+        allowed_rates = {
+            Decimal("0"),
+            Decimal("10"),
+            Decimal("12"),
+            Decimal("15"),
+            Decimal("21"),
+        }
         if v not in allowed_rates:
             raise ValueError(f"VAT rate must be one of {allowed_rates}, got {v}")
         return v
@@ -105,6 +111,7 @@ class PohodaFaktura(BaseModel):
     )
     Vystaveno: date = Field(description="Issue date")
     PlnenoDPH: date = Field(description="Tax point date (supply date)")
+    Doruceno: date | None = Field(default=None, description="Date received")
     Splatno: date = Field(description="Due date")
     VarSymbol: str | None = Field(
         default=None, max_length=20, description="Variable symbol"

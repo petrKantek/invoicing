@@ -107,7 +107,7 @@ class PhoenixParser(BaseParser):
         for i, line in enumerate(lines):
             if "Datum vystavení" in line or "vystavený" in line.lower():
                 # Check same line and next few lines for date
-                for j in range(i, min(i + 3, len(lines))):
+                for j in range(i, min(i + 6, len(lines))):
                     date_match = RegexExtractor.extract_czech_date(lines[j])
                     if date_match:
                         return self._parse_czech_date(date_match)
@@ -116,13 +116,21 @@ class PhoenixParser(BaseParser):
 
     def _extract_due_date(self, text: str) -> datetime:
         """Extract due date from text."""
-        value = KeywordExtractor.find_text_after_keyword(
-            text, "DATUM SPLATNOSTI:", r"(\d{2}\.\d{2}\.\d{4})"
-        )
-        if not value:
-            raise PDFParseError("Due date not found")
+        lines = text.split("\n")
+        for i, line in enumerate(lines):
+            if "Datum splatnosti" in line or "splatnosti" in line.lower():
+                dates_found = []
+                for j in range(i, min(i + 6, len(lines))):
+                    date_match = RegexExtractor.extract_czech_date(lines[j])
+                    if date_match:
+                        dates_found.append(date_match)
 
-        return self._parse_czech_date(value)
+                if len(dates_found) >= 2:
+                    return self._parse_czech_date(dates_found[1])
+                if len(dates_found) == 1:
+                    return self._parse_czech_date(dates_found[0])
+
+        raise PDFParseError("Due date not found")
 
     def _extract_supply_date(self, text: str) -> datetime:
         """Extract supply date (tax point date) from text."""
@@ -142,12 +150,9 @@ class PhoenixParser(BaseParser):
                     if date_match:
                         dates_found.append(date_match)
 
-                # Supply date is the second date found (first is issue date)
-                if len(dates_found) >= 2:
-                    return self._parse_czech_date(dates_found[1])
-                elif len(dates_found) == 1:
-                    # Fallback to first date if only one found
-                    return self._parse_czech_date(dates_found[0])
+                # Supply date is the last date found in the block.
+                if dates_found:
+                    return self._parse_czech_date(dates_found[-1])
 
         raise PDFParseError("Supply date not found")
 
@@ -161,13 +166,33 @@ class PhoenixParser(BaseParser):
 
     def _extract_supplier_info(self, text: str) -> SupplierInfo:
         """Extract supplier information from text."""
-        # Extract name
-        name_value = KeywordExtractor.find_text_after_keyword(text, "Dodavatel:", None)
-        if not name_value:
+        lines = [line.strip() for line in text.split("\n")]
+        supplier_lines: list[str] = []
+        for index, line in enumerate(lines):
+            if "Dodavatel:" in line:
+                for candidate in lines[index + 1 :]:
+                    if candidate:
+                        supplier_lines.append(candidate)
+                    if len(supplier_lines) >= 3:
+                        break
+                break
+
+        if not supplier_lines:
             raise PDFParseError("Supplier name not found")
 
-        # Clean up the name (first line after "Dodavatel:")
-        name = name_value.split("\n")[0].strip()
+        name = supplier_lines[0]
+        street = supplier_lines[1] if len(supplier_lines) > 1 else None
+        zip_code = None
+        city = None
+        if len(supplier_lines) > 2:
+            zip_city_match = RegexExtractor.extract_first_match(
+                supplier_lines[2], r"(\d{3}\s?\d{2})\s+(.+)", group=1
+            )
+            if zip_city_match:
+                zip_code = zip_city_match
+                city = RegexExtractor.extract_first_match(
+                    supplier_lines[2], r"(\d{3}\s?\d{2})\s+(.+)", group=2
+                )
 
         # Extract IČO
         ic = RegexExtractor.extract_ic(text)
@@ -179,7 +204,7 @@ class PhoenixParser(BaseParser):
         if not dic:
             raise PDFParseError("Supplier DIČ not found")
 
-        return SupplierInfo(name=name, ic=ic, dic=dic)
+        return SupplierInfo(name=name, ic=ic, dic=dic, street=street, city=city, zip=zip_code)
 
     def _extract_vat_breakdown(self, text: str) -> list[VATBreakdown]:
         """Extract VAT breakdown from text.
@@ -206,6 +231,15 @@ class PhoenixParser(BaseParser):
                 VATBreakdown(rate=Decimal("0.12"), base=base_12, amount=vat_12)
             )
 
+        # Try to extract 10% VAT
+        base_10 = self._extract_vat_base(text, "10")
+        vat_10 = self._extract_vat_amount(text, "10")
+
+        if base_10 and vat_10:
+            vat_breakdowns.append(
+                VATBreakdown(rate=Decimal("0.10"), base=base_10, amount=vat_10)
+            )
+
         # Try to extract 0% VAT
         base_0 = self._extract_vat_base(text, "0")
 
@@ -222,7 +256,7 @@ class PhoenixParser(BaseParser):
     def _extract_vat_base(self, text: str, rate: str) -> Decimal | None:
         """Extract VAT base amount for a specific rate."""
         # Find all matches and take the last one (final recap on page 2)
-        pattern = rf"{rate}%[\s\S]{{0,100}}?([\d\s]+,\d{{2}})"
+        pattern = rf"(?<!\d){rate}%[\s\S]{{0,100}}?([-\d\s]+,\d{{2}})"
         matches = RegexExtractor.extract_all_matches(text, pattern, group=1)
         if matches:
             # Take last match
@@ -234,7 +268,7 @@ class PhoenixParser(BaseParser):
         """Extract VAT amount for a specific rate."""
         # Find all pairs and take the last pair's second number
         pattern = (
-            rf"{rate}%[\s\S]{{0,100}}?[\d\s]+,\d{{2}}[\s\S]{{0,50}}?([\d\s]+,\d{{2}})"
+            rf"(?<!\d){rate}%[\s\S]{{0,100}}?[-\d\s]+,\d{{2}}[\s\S]{{0,50}}?([-\d\s]+,\d{{2}})"
         )
         matches = RegexExtractor.extract_all_matches(text, pattern, group=1)
         if matches:
@@ -246,8 +280,12 @@ class PhoenixParser(BaseParser):
     def _extract_total_amount(self, text: str) -> Decimal:
         """Extract total amount with VAT."""
         value = KeywordExtractor.find_text_after_keyword(
-            text, "ČÁSTKA K ÚHRADĚ:", r"([\d\s]+,\d{2})"
+            text, "ČÁSTKA K ÚHRADĚ:", r"([-\d\s]+,\d{2})"
         )
+        if not value:
+            value = KeywordExtractor.find_text_after_keyword(
+                text, "Celkem k úhradě", r"([-\d\s]+,\d{2})"
+            )
         if not value:
             raise PDFParseError("Total amount not found")
 
